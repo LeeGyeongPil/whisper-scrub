@@ -1,0 +1,7 @@
+# Chinese phrases. Columns: phrase<TAB>level<TAB>source. Lines starting with # are comments.
+# Reproduced with faster-whisper 1.2.1 tiny on synthetic silence / noise (2026-11-11). These are
+# short junk outputs rather than well-known stock phrases, so they are weak (never deleted alone).
+# Contributions need a reproduction (input kind, model, run name) in the source column.
+不是	weak	probe:raw_silence30_zh
+天生	weak	probe:raw_noise30_zh
+就算了	weak	probe:raw_noise30_zh

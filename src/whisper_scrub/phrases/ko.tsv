@@ -1,0 +1,5 @@
+# Korean phrases. Columns: phrase<TAB>level<TAB>source. Lines starting with # are comments.
+# Only phrases that were actually reproduced are listed (2026-11-11, faster-whisper 1.2.1 tiny,
+# synthetic silence / noise / tones with language="ko"). "weak" = never deleted on its own,
+# because real speakers also say it at the end of a meeting.
+수고하셨습니다	weak	probe:raw_silence30_ko,raw_noise30_ko,raw_tones30_ko

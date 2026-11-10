@@ -1,0 +1,35 @@
+# English phrases. Columns: phrase<TAB>level<TAB>source. Lines starting with # are comments.
+# Phrases are stored in normalised form (NFKC, lower case, punctuation as spaces).
+# source=BoH: DSP-AGH Bag of Hallucinations (MIT), see THIRD_PARTY_NOTICES.md.
+# source=AGH:hallucination_list: the same project's full list of predictions on non-speech audio (MIT).
+# source=probe:<run>: reproduced with faster-whisper 1.2.1 tiny on synthetic silence/noise (2026-11-11).
+subtitles by the amara org community	strict	BoH
+subtitles by steamteamextra	strict	BoH
+closed captioning provided by the imperial news network	strict	BoH
+closed captioning provided by muhsen	strict	BoH
+transcription by eso translation by	strict	BoH
+transcribed by eso translated by	strict	BoH
+captions by nicosubs	strict	BoH
+bf watch tv 2021	strict	BoH
+transcript emily beynon	strict	BoH
+tanya cushman reviewer s	strict	BoH
+thanks for watching	weak	BoH
+thank you for watching	weak	BoH
+thank you very much	weak	BoH
+so until next time bye for now	weak	BoH
+we ll be right back	weak	BoH
+hello and welcome to another episode of the	weak	BoH
+welcome to another episode of the	weak	BoH
+hello everyone welcome to my channel	weak	BoH
+welcome to my channel	weak	BoH
+hi guys welcome back to my channel	weak	BoH
+we ll see you next time	weak	BoH
+outro music	weak	BoH
+bell rings	weak	BoH
+birds chirp	weak	BoH
+beeping	weak	BoH
+woof	weak	BoH
+i m not sure what i m doing here	weak	BoH
+thank you	weak	AGH:hallucination_list
+you	weak	AGH:hallucination_list
+thanks	weak	AGH:hallucination_list

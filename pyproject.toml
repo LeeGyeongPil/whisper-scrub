@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "whisper-scrub"
+version = "0.1.0"
+description = "Find and remove Whisper hallucinations (phantom sentences on silence, repeat loops) from transcripts and subtitles, with a per-segment evidence report."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
+requires-python = ">=3.10,<3.15"
+authors = [{ name = "LeeGyeongPil" }]
+keywords = ["whisper", "asr", "hallucination", "subtitles", "srt", "vtt", "transcription", "faster-whisper"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Multimedia :: Sound/Audio :: Speech",
+  "Typing :: Typed",
+]
+dependencies = []
+
+[project.optional-dependencies]
+# Energy-based VAD for --audio (16-bit PCM WAV).
+audio = ["numpy>=1.26"]
+
+[project.scripts]
+whisper-scrub = "whisper_scrub.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/LeeGyeongPil/whisper-scrub"
+Issues = "https://github.com/LeeGyeongPil/whisper-scrub/issues"
+Changelog = "https://github.com/LeeGyeongPil/whisper-scrub/blob/main/CHANGELOG.md"
+
+[dependency-groups]
+# srt and webvtt-py are only used to cross-check that our output parses with
+# the standard readers. They are never imported by the package itself.
+dev = ["pytest>=8", "numpy>=1.26", "srt==3.5.3", "webvtt-py==0.8.0"]
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/whisper_scrub"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "examples", "README.md", "CHANGELOG.md", "LICENSE", "THIRD_PARTY_NOTICES.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["real: needs a local faster-whisper model (WHISPER_SCRUB_MODEL_DIR); skipped by default"]

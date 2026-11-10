@@ -1,0 +1,4 @@
+# Japanese phrases. Columns: phrase<TAB>level<TAB>source. Lines starting with # are comments.
+# Reproduced with faster-whisper 1.2.1 tiny on synthetic silence / noise (2026-11-11).
+ご視聴ありがとうございました	weak	probe:raw_silence30_ja
+ご視聴ありがとうございます	weak	probe:raw_noise30_ja
