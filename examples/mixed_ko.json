@@ -1,0 +1,106 @@
+{
+ "language": "ko",
+ "duration": 72.0,
+ "segments": [
+  {
+   "id": 1,
+   "start": 0.0,
+   "end": 3.06,
+   "text": " 그리고 제 조사에 만드는 말이죠.",
+   "avg_logprob": -1.475,
+   "compression_ratio": 2.222,
+   "no_speech_prob": 0.093,
+   "temperature": 1.0
+  },
+  {
+   "id": 2,
+   "start": 3.06,
+   "end": 4.86,
+   "text": " 이 말은,",
+   "avg_logprob": -1.475,
+   "compression_ratio": 2.222,
+   "no_speech_prob": 0.093,
+   "temperature": 1.0
+  },
+  {
+   "id": 3,
+   "start": 4.86,
+   "end": 5.64,
+   "text": " 이 말은,",
+   "avg_logprob": -1.475,
+   "compression_ratio": 2.222,
+   "no_speech_prob": 0.093,
+   "temperature": 1.0
+  },
+  {
+   "id": 4,
+   "start": 5.64,
+   "end": 7.1,
+   "text": " 이 말은,",
+   "avg_logprob": -1.475,
+   "compression_ratio": 2.222,
+   "no_speech_prob": 0.093,
+   "temperature": 1.0
+  },
+  {
+   "id": 5,
+   "start": 7.1,
+   "end": 8.24,
+   "text": " 이 말은,",
+   "avg_logprob": -1.475,
+   "compression_ratio": 2.222,
+   "no_speech_prob": 0.093,
+   "temperature": 1.0
+  },
+  {
+   "id": 6,
+   "start": 8.24,
+   "end": 9.12,
+   "text": " 이 말은,",
+   "avg_logprob": -1.475,
+   "compression_ratio": 2.222,
+   "no_speech_prob": 0.093,
+   "temperature": 1.0
+  },
+  {
+   "id": 7,
+   "start": 9.12,
+   "end": 9.98,
+   "text": " 이 말은,",
+   "avg_logprob": -1.475,
+   "compression_ratio": 2.222,
+   "no_speech_prob": 0.093,
+   "temperature": 1.0
+  },
+  {
+   "id": 8,
+   "start": 9.98,
+   "end": 10.48,
+   "text": " 이 말은,",
+   "avg_logprob": -1.475,
+   "compression_ratio": 2.222,
+   "no_speech_prob": 0.093,
+   "temperature": 1.0
+  },
+  {
+   "id": 9,
+   "start": 10.48,
+   "end": 10.78,
+   "text": " 이 말은,",
+   "avg_logprob": -1.475,
+   "compression_ratio": 2.222,
+   "no_speech_prob": 0.093,
+   "temperature": 1.0
+  },
+  {
+   "id": 10,
+   "start": 60.0,
+   "end": 79.1,
+   "text": " 끊임 이�י 마저의",
+   "avg_logprob": -4.631,
+   "compression_ratio": 0.694,
+   "no_speech_prob": 0.196,
+   "temperature": 1.0
+  }
+ ]
+}

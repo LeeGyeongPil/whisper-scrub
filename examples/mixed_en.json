@@ -1,0 +1,36 @@
+{
+ "language": "en",
+ "duration": 72.0,
+ "segments": [
+  {
+   "id": 1,
+   "start": 0.0,
+   "end": 11.0,
+   "text": " And so my fellow Americans ask not what your country can do for you, ask what you can do for your country.",
+   "avg_logprob": -0.3,
+   "compression_ratio": 1.342,
+   "no_speech_prob": 0.093,
+   "temperature": 0.0
+  },
+  {
+   "id": 2,
+   "start": 30.0,
+   "end": 32.0,
+   "text": " You",
+   "avg_logprob": -0.942,
+   "compression_ratio": 0.273,
+   "no_speech_prob": 0.985,
+   "temperature": 0.0
+  },
+  {
+   "id": 3,
+   "start": 60.0,
+   "end": 72.0,
+   "text": " And so my fellow Americans ask not what your country can do for you, ask what you can do for your country.",
+   "avg_logprob": -0.113,
+   "compression_ratio": 1.342,
+   "no_speech_prob": 0.276,
+   "temperature": 0.0
+  }
+ ]
+}
