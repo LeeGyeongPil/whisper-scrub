@@ -1,5 +1,7 @@
 # whisper-scrub
 
+**한국어** | [English](README.en.md)
+
 > **English summary** — A small Python library and CLI that finds and removes Whisper hallucinations (phantom sentences on silence such as `You`, and same-sentence repeat loops) from JSON, SRT and VTT transcripts. It combines a phrase dictionary, repeat rules, Whisper's own signals and (optionally) audio, keeps timecodes and untouched cues byte-for-byte, and writes a per-segment evidence report. Install: `pip install "whisper-scrub[audio]"`, run: `whisper-scrub clean talk.srt --dry-run --report -`. The bundled examples are recorded real outputs ("mock" inputs, no model runs when you try them).
 
 Whisper(openai-whisper, faster-whisper, whisper.cpp, OpenAI API)가 만든 전사·자막에서 **무음·잡음 구간에 생긴 가짜 문장**과 **같은 말이 되풀이되는 루프**를 찾아 지웁니다. 타임코드와 번호는 그대로 두고, **왜 지웠는지**를 세그먼트마다 보고서로 남깁니다. 정답 전사가 없어도 파일의 환각 의심 비율을 점검(`check`)할 수 있습니다.
