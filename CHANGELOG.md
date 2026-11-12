@@ -4,6 +4,22 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-11-13
+
+### Added
+- Display language for the CLI: English or Korean. Chosen by `--lang en|ko` before the subcommand,
+  then `WHISPER_SCRUB_LANG`, then `LC_ALL`, `LC_MESSAGES`, `LANG`; anything not starting with `ko` is English.
+  Covers `--help`, usage and argparse errors, the summary lines, warnings, error messages and the
+  Markdown report labels. The subcommands' own `--lang ko|en|ja|zh` (dictionary language) is unchanged.
+- `whisper_scrub.i18n` (message tables, `resolve_lang`, Korean particle handling).
+- `ScrubError` accepts optional `code` and `params` keyword arguments; `str(exc)` stays the English message.
+- `report_markdown(lang="en")` and `CheckReport.summary_line(lang="en")` accept an opt-in language.
+
+### Changed
+- If a script compares CLI message text and your environment `LANG` starts with `ko`, the text is now
+  Korean. Set `WHISPER_SCRUB_LANG=en` to keep English. JSON output, phrase TSV and exit codes are unchanged.
+- The dictionary `--lang` option now has help text that points to the display `--lang`.
+
 ## [0.1.0] - 2026-11-11
 
 ### Added
