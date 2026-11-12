@@ -53,7 +53,7 @@ whisper-scrub: removed 7, suspect 1, kept 2 of 10 segments (dry run, nothing wri
 - input: examples/mixed_ko.srt (srt)
 - segments: 10 (removed 7, suspect 1, kept 2)
 - speech intervals: not provided
-- tool: whisper-scrub 0.1.0 (report_version 1)
+- tool: whisper-scrub 0.2.0 (report_version 1)
 
 | # | time (s) | action | confidence | rules | text |
 |---|---|---|---|---|---|
@@ -147,6 +147,18 @@ whisper-scrub phrases [--lang ko|en|ja|zh] [--phrases TSV] [--no-builtin]
 
 The input format is auto-detected from the content: openai-whisper `result` JSON, OpenAI `verbose_json`, faster-whisper segment-list JSON, whisper.cpp `-oj` JSON, SRT, VTT. If it is unknown, you get `UnknownFormatError`. Tuning options: `--repeat-min N` (from how many consecutive repeats of the same sentence to collapse, default 3), `--phantom-min-seconds SEC` (the minimum length for deleting on `audio.no_speech` alone, default 1.0), `--no-speech-guard` (turn off the safeguard below, on by default). It never overwrites the input file (it is an error if `-o` equals the input). Exit codes: 0 normal, 1 `check --fail-over` exceeded, 2 usage error (a one-line message with how to fix it).
 
+### Display language (English / Korean)
+
+Messages, `--help`, error messages and the Markdown report labels come in English or Korean. Pick one:
+
+1. `--lang en|ko` **before** the subcommand: `whisper-scrub --lang ko clean talk.srt --dry-run`
+2. the `WHISPER_SCRUB_LANG=ko` environment variable
+3. otherwise `LC_ALL`, `LC_MESSAGES`, `LANG` (in that order); a value starting with `ko` (for example `ko_KR.UTF-8`) means Korean, anything else English.
+
+The two `--lang` options are different things. The one before the subcommand is the **display language** (`en|ko`). The `--lang ko|en|ja|zh` after `clean`, `check` or `phrases` is the **dictionary (transcript) language** and works as before. They can be used together: `whisper-scrub --lang ko check talk.srt --lang ja` shows Korean text and judges with the Japanese dictionary first (the language detected from the text is still checked, so an English segment can still match the English dictionary).
+
+Only text for people changes. JSON output (`--format json`, `.json` reports), the `phrases` TSV, rule ids, `remove|suspect|keep` values, per-rule notes and exit codes are identical in both languages. If a script compares message text, pin it with `WHISPER_SCRUB_LANG=en`. The Python API stays English (`report_markdown(lang="ko")` is an opt-in).
+
 ### When you have an audio signal
 
 An SRT has no meta signals, so a subtitle with just a `You` line, like the one below, ends as `suspect`.
@@ -199,7 +211,7 @@ whisper-scrub: removed 0, suspect 1, kept 2 of 3 segments (dry run, nothing writ
 - input: examples/mixed_en.srt (srt)
 - segments: 3 (removed 0, suspect 1, kept 2)
 - speech intervals: 0
-- tool: whisper-scrub 0.1.0 (report_version 1)
+- tool: whisper-scrub 0.2.0 (report_version 1)
 - WARNING: speech intervals cover almost none of the transcript - check the file and its units (seconds) or the recording level; the audio rules were skipped, so nothing was deleted because of the audio
 
 | # | time (s) | action | confidence | rules | text |
@@ -359,7 +371,7 @@ result = scrub(segments, config=Config(phrases=book, repeat_min=4))
 ## Versions and compatibility
 
 - Follows Semantic Versioning (SemVer). During 0.x, the API may change in minor versions, and changes are recorded in [CHANGELOG.md](CHANGELOG.md).
-- Currently 0.1.0. Python 3.10 to 3.14 is declared as supported, and CI runs on 3.10 and 3.12 (ubuntu).
+- Currently 0.2.0. Python 3.10 to 3.14 is declared as supported, and CI runs on 3.10 and 3.12 (ubuntu).
 
 ## Development and contributing
 
@@ -369,7 +381,7 @@ uv run pytest -q
 ```
 
 ```text
-106 passed, 1 skipped in 0.54s
+159 passed, 1 skipped in 0.61s
 ```
 
 The 1 skipped test is the test marked `real` that needs a real model (skipped if `WHISPER_SCRUB_MODEL_DIR` is not set). A contribution that adds a phrase to the dictionary must come with **the evidence of a reproduced run (model, input, output)**.
