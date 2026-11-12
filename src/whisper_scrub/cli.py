@@ -4,64 +4,145 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import re
 import sys
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import Any, Optional, Sequence
 
 from ._version import __version__
 from .check import check_result
 from .config import Config
 from .errors import ScrubError
+from .i18n import fail, get_lang, localize_error, localize_warning, resolve_lang, set_lang, t
 from .judge import scrub
 from .io import load
 from .model import REMOVE, ScrubResult
 from .phrases import PhraseBook
 from .vad import Interval, energy_vad, load_speech_json
 
+COMMANDS = ("clean", "check", "phrases")
+
+
+class _Formatter(argparse.HelpFormatter):
+    """Help formatter whose 'usage:' heading follows the display language."""
+
+    def add_usage(self, usage, actions, groups, prefix=None):  # type: ignore[no-untyped-def]
+        if prefix is None:
+            prefix = t("usage_prefix") + " "
+        super().add_usage(usage, actions, groups, prefix)
+
+
+def _localize_argparse(msg: str) -> str:
+    """Translate the common argparse error messages when the display language is Korean."""
+    if get_lang() != "ko":
+        return msg
+    head = ""
+    m = re.match(r"argument (.+?): (.*)$", msg, re.S)
+    if m:
+        head, msg = t("argparse.argument", name=m.group(1)), m.group(2)
+    if m := re.fullmatch(r"the following arguments are required: (.*)", msg, re.S):
+        return t("argparse.required", names=m.group(1))
+    if m := re.fullmatch(r"unrecognized arguments: (.*)", msg, re.S):
+        return t("argparse.unrecognized", names=m.group(1))
+    if m := re.fullmatch(r"invalid choice: (.+?) \(choose from (.*)\)", msg, re.S):
+        return head + t("argparse.invalid_choice", value=m.group(1), choices=m.group(2))
+    if m := re.fullmatch(r"invalid (\w+) value: (.*)", msg, re.S):
+        kind = m.group(1)
+        try:
+            kind = t(f"argparse.kind.{kind}")
+        except KeyError:
+            pass
+        return head + t("argparse.invalid_value", kind=kind, value=m.group(2))
+    if msg == "expected one argument":
+        return head + t("argparse.expected_one")
+    return head + msg
+
+
+class _Parser(argparse.ArgumentParser):
+    """ArgumentParser whose headings, -h text and error prefix follow the display language."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        kwargs["add_help"] = False
+        kwargs.setdefault("formatter_class", _Formatter)
+        super().__init__(*args, **kwargs)
+        self._positionals.title = t("positional_title")
+        self._optionals.title = t("options_title")
+        self.add_argument("-h", "--help", action="help", default=argparse.SUPPRESS, help=t("help.help"))
+
+    def error(self, message: str) -> Any:
+        self.print_usage(sys.stderr)
+        self.exit(2, f"{self.prog}: {t('prefix.error')} {_localize_argparse(message)}\n")
+
 
 def _add_common(p: argparse.ArgumentParser) -> None:
-    p.add_argument("--audio", metavar="WAV", help="16-bit PCM WAV; speech is found with an energy VAD (needs the [audio] extra)")
-    p.add_argument("--speech", metavar="JSON", help="speech intervals you already have: [{'start': s, 'end': e}] in seconds")
-    p.add_argument("--duration", type=float, metavar="SEC", help="audio length in seconds (default: from --audio or the JSON 'duration')")
-    p.add_argument("--phrases", metavar="TSV", help="your own phrase file (one phrase per line, optional TAB + strict|weak)")
-    p.add_argument("--no-builtin", action="store_true", help="do not use the built-in dictionaries")
-    p.add_argument("--substring", action="store_true", help="also match phrases inside longer text (more false positives)")
-    p.add_argument("--lang", choices=["ko", "en", "ja", "zh"], help="force the dictionary language instead of guessing it from the script")
+    p.add_argument("--audio", metavar="WAV", help=t("help.audio"))
+    p.add_argument("--speech", metavar="JSON", help=t("help.speech"))
+    p.add_argument("--duration", type=float, metavar="SEC", help=t("help.duration"))
+    p.add_argument("--phrases", metavar="TSV", help=t("help.phrases"))
+    p.add_argument("--no-builtin", action="store_true", help=t("help.no_builtin"))
+    p.add_argument("--substring", action="store_true", help=t("help.substring"))
+    # transcript (dictionary) language; the display language is the --lang before the subcommand
+    p.add_argument("--lang", choices=["ko", "en", "ja", "zh"], help=t("help.dict_lang"))
     d = Config()
-    p.add_argument("--repeat-min", type=int, metavar="N", default=d.repeat_min, help=f"fold the same sentence when it appears N+ times in a row (default {d.repeat_min}, minimum 2)")
-    p.add_argument("--phantom-min-seconds", type=float, metavar="SEC", default=d.phantom_min_seconds, help=f"a segment this long with no speech under it may be removed on audio alone (default {d.phantom_min_seconds:g}; a huge value turns audio-only removal off)")
-    p.add_argument("--no-speech-guard", action="store_true", help="do not downgrade audio-only removal when the speech intervals look broken (empty, or covering almost none of the transcript)")
+    p.add_argument("--repeat-min", type=int, metavar="N", default=d.repeat_min, help=t("help.repeat_min", default=d.repeat_min))
+    p.add_argument("--phantom-min-seconds", type=float, metavar="SEC", default=d.phantom_min_seconds, help=t("help.phantom", default=d.phantom_min_seconds))
+    p.add_argument("--no-speech-guard", action="store_true", help=t("help.no_guard"))
 
 
 def build_parser() -> argparse.ArgumentParser:
-    ap = argparse.ArgumentParser(
-        prog="whisper-scrub",
-        description="Find and remove Whisper hallucinations (phantom sentences, repeat loops) in JSON/SRT/VTT transcripts.",
-    )
-    ap.add_argument("--version", action="version", version=f"whisper-scrub {__version__}")
-    sub = ap.add_subparsers(dest="command", required=True)
+    """Build the parser in the current display language (see :func:`whisper_scrub.i18n.set_lang`)."""
+    ap = _Parser(prog="whisper-scrub", description=t("desc.main"))
+    ap.add_argument("--version", action="version", version=f"whisper-scrub {__version__}", help=t("help.version"))
+    # display language; read by _display_lang() before parsing, registered here for --help and validation
+    ap.add_argument("--lang", dest="ui_lang", choices=["en", "ko"], metavar="{en,ko}", help=t("help.ui_lang"))
+    # English keeps argparse's own {clean,check,phrases} usage; Korean shows a translated name instead of the dest
+    sub_names: dict[str, Any] = {"metavar": t("metavar.command")} if get_lang() == "ko" else {}
+    sub = ap.add_subparsers(dest="command", required=True, parser_class=_Parser, **sub_names)
 
-    c = sub.add_parser("clean", help="remove hallucinated segments and write a report")
-    c.add_argument("input", help="Whisper JSON, whisper.cpp JSON, SRT or VTT file")
-    c.add_argument("-o", "--output", metavar="FILE", help="where to write the cleaned file (never the input itself)")
-    c.add_argument("--report", metavar="FILE|-", help="write a report; '-' prints it to stdout (.json extension: JSON, otherwise Markdown)")
-    c.add_argument("--report-format", choices=["md", "json"], help="override the format guessed from --report")
-    c.add_argument("--dry-run", action="store_true", help="judge only, write no cleaned file")
-    c.add_argument("--renumber", action="store_true", help="renumber SRT cues from 1 (default keeps the original numbers)")
+    c = sub.add_parser("clean", help=t("cmd.clean"))
+    c.add_argument("input", metavar=t("metavar.input"), help=t("help.clean.input"))
+    c.add_argument("-o", "--output", metavar="FILE", help=t("help.clean.output"))
+    c.add_argument("--report", metavar="FILE|-", help=t("help.clean.report"))
+    c.add_argument("--report-format", choices=["md", "json"], help=t("help.clean.report_format"))
+    c.add_argument("--dry-run", action="store_true", help=t("help.clean.dry_run"))
+    c.add_argument("--renumber", action="store_true", help=t("help.clean.renumber"))
     _add_common(c)
 
-    k = sub.add_parser("check", help="reference-free quality check (flagged ratio, repeat runs)")
-    k.add_argument("inputs", nargs="+", help="one or more files")
-    k.add_argument("--fail-over", type=float, metavar="RATIO", help="exit 1 if any file's flagged ratio (removed+suspect)/segments exceeds this (0..1)")
-    k.add_argument("--audio-dir", metavar="DIR", help="use DIR/<input stem>.wav as the audio of each input")
-    k.add_argument("--format", choices=["table", "json"], default="table")
+    k = sub.add_parser("check", help=t("cmd.check"))
+    k.add_argument("inputs", nargs="+", metavar=t("metavar.inputs"), help=t("help.check.inputs"))
+    k.add_argument("--fail-over", type=float, metavar="RATIO", help=t("help.check.fail_over"))
+    k.add_argument("--audio-dir", metavar="DIR", help=t("help.check.audio_dir"))
+    k.add_argument("--format", choices=["table", "json"], default="table", help=t("help.check.format"))
     _add_common(k)
 
-    ph = sub.add_parser("phrases", help="list the dictionary phrases")
-    ph.add_argument("--lang", choices=["ko", "en", "ja", "zh"])
-    ph.add_argument("--phrases", metavar="TSV", help="also include your own phrase file")
-    ph.add_argument("--no-builtin", action="store_true")
+    ph = sub.add_parser("phrases", help=t("cmd.phrases"))
+    ph.add_argument("--lang", choices=["ko", "en", "ja", "zh"], help=t("help.dict_lang"))
+    ph.add_argument("--phrases", metavar="TSV", help=t("help.phrases.phrases"))
+    ph.add_argument("--no-builtin", action="store_true", help=t("help.phrases.no_builtin"))
     return ap
+
+
+def _display_lang(argv: Sequence[str]) -> str:
+    """Display language: ``--lang`` before the subcommand > env vars (see ``resolve_lang``).
+
+    Only the tokens before the first subcommand name are looked at, so the subcommands'
+    own ``--lang ko|en|ja|zh`` (dictionary language) is never mistaken for it.
+    """
+
+    class _Quiet(argparse.ArgumentParser):
+        def error(self, message: str) -> Any:  # a bad value is reported by the real parser
+            raise ValueError(message)
+
+    cut = next((i for i, a in enumerate(argv) if a in COMMANDS), len(argv))
+    pre = _Quiet(add_help=False, allow_abbrev=False)
+    pre.add_argument("--lang", dest="ui_lang")
+    try:
+        known, _ = pre.parse_known_args(list(argv[:cut]))
+        value = known.ui_lang
+    except ValueError:
+        value = None
+    return resolve_lang(value, os.environ)
 
 
 def _book(args: argparse.Namespace) -> Optional[PhraseBook]:
@@ -85,7 +166,10 @@ def _config(args: argparse.Namespace) -> Config:
 
 def _warn(result: ScrubResult, name: Optional[str] = None) -> None:
     for w in result.warnings:
-        print(f"whisper-scrub: warning: {(name + ': ') if name else ''}{w}", file=sys.stderr)
+        print(
+            f"whisper-scrub: {t('prefix.warning')} {(name + ': ') if name else ''}{localize_warning(w, get_lang())}",
+            file=sys.stderr,
+        )
 
 
 def _audio_info(
@@ -103,11 +187,11 @@ def _audio_info(
 
 def _cmd_clean(args: argparse.Namespace) -> int:
     if args.audio and args.speech:
-        raise ScrubError("use either --audio or --speech, not both")
+        raise fail(ScrubError, "err.cli.audio_and_speech")
     if not args.dry_run and not args.output:
-        raise ScrubError("clean writes a new file: pass -o FILE, or use --dry-run to only look at the report")
+        raise fail(ScrubError, "err.cli.need_output")
     if args.output and Path(args.output).resolve() == Path(args.input).resolve():
-        raise ScrubError("-o must differ from the input; whisper-scrub never overwrites its input")
+        raise fail(ScrubError, "err.cli.same_output")
     doc = load(args.input)
     spans, duration = _audio_info(args, args.audio)
     result = scrub(doc, audio_duration=duration, speech=spans, config=_config(args))
@@ -121,17 +205,28 @@ def _cmd_clean(args: argparse.Namespace) -> int:
         as_json = args.report_format == "json" or (
             args.report_format is None and args.report != "-" and args.report.endswith(".json")
         )
-        text = json.dumps(result.report_json(), ensure_ascii=False, indent=2) + "\n" if as_json else result.report_markdown()
+        # JSON is machine output and never translated; only the Markdown labels follow the display language
+        text = (
+            json.dumps(result.report_json(), ensure_ascii=False, indent=2) + "\n"
+            if as_json
+            else result.report_markdown(lang=get_lang())
+        )
         if args.report == "-":
             sys.stdout.write(text)
         else:
             Path(args.report).write_text(text, encoding="utf-8")
 
     n = len(result.segments)
-    note = "dry run, nothing written" if args.dry_run else f"wrote {args.output}"
+    note = t("out.note_dry") if args.dry_run else t("out.note_wrote", output=args.output)
     print(
-        f"whisper-scrub: removed {len(result.removed)}, suspect {len(result.suspects)}, "
-        f"kept {n - len(result.removed) - len(result.suspects)} of {n} segments ({note})",
+        t(
+            "out.summary",
+            removed=len(result.removed),
+            suspect=len(result.suspects),
+            kept=n - len(result.removed) - len(result.suspects),
+            total=n,
+            note=note,
+        ),
         file=sys.stderr,
     )
     return 0
@@ -139,9 +234,9 @@ def _cmd_clean(args: argparse.Namespace) -> int:
 
 def _cmd_check(args: argparse.Namespace) -> int:
     if args.fail_over is not None and not 0.0 <= args.fail_over <= 1.0:
-        raise ScrubError(f"--fail-over must be a ratio between 0 and 1, got {args.fail_over}")
+        raise fail(ScrubError, "err.cli.fail_over", value=args.fail_over)
     if args.audio and len(args.inputs) > 1:
-        raise ScrubError("--audio fits one input; use --audio-dir DIR for several files")
+        raise fail(ScrubError, "err.cli.audio_many")
     cfg = _config(args)
     rows = []
     failed = False
@@ -164,8 +259,8 @@ def _cmd_check(args: argparse.Namespace) -> int:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
     else:
         for path, rep, over in rows:
-            tail = f" | FAIL (> {args.fail_over:g})" if over else ""
-            print(f"{path}: {rep.summary_line()}{tail}")
+            tail = t("out.fail_tail", ratio=args.fail_over) if over else ""
+            print(f"{path}: {rep.summary_line(get_lang())}{tail}")
     return 1 if failed else 0
 
 
@@ -177,11 +272,13 @@ def _cmd_phrases(args: argparse.Namespace) -> int:
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    args = build_parser().parse_args(argv)
+    tokens = list(sys.argv[1:] if argv is None else argv)
+    set_lang(_display_lang(tokens))
+    args = build_parser().parse_args(tokens)
     try:
         return {"clean": _cmd_clean, "check": _cmd_check, "phrases": _cmd_phrases}[args.command](args)
     except ScrubError as exc:
-        print(f"whisper-scrub: error: {exc}", file=sys.stderr)
+        print(f"whisper-scrub: {t('prefix.error')} {localize_error(exc)}", file=sys.stderr)
         return 2
     except BrokenPipeError:  # e.g. `... | head`
         return 0

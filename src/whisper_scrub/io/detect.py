@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 from ..errors import ScrubError, UnknownFormatError
+from ..i18n import Reason, fail
 from .document import Document, parse_timing, split_lines
 from .srt import parse_srt
 from .vtt import parse_vtt
@@ -30,10 +31,7 @@ def loads(text: str, source: Optional[str] = None) -> Document:
             doc = parse_srt(text, bom, source)
             if doc.segments:
                 return doc
-    raise UnknownFormatError(
-        "unrecognised input: expected Whisper/whisper.cpp JSON, SRT or WebVTT "
-        "(a WEBVTT header, a JSON object/list, or numbered 'hh:mm:ss,mmm --> hh:mm:ss,mmm' cues)"
-    )
+    raise fail(UnknownFormatError, "err.io.unknown")
 
 
 def load(path: Union[str, Path]) -> Document:
@@ -42,11 +40,9 @@ def load(path: Union[str, Path]) -> Document:
     try:
         raw = p.read_bytes()
     except OSError as exc:
-        raise ScrubError(f"cannot read {p}: {exc.strerror or exc}") from exc
+        raise fail(ScrubError, "err.io.read", path=p, reason=Reason(exc)) from exc
     try:
         text = raw.decode("utf-8")
     except UnicodeDecodeError as exc:
-        raise UnknownFormatError(
-            f"{p} is not valid UTF-8 (byte {exc.start}); convert it first, e.g. `iconv -f CP949 -t UTF-8`"
-        ) from exc
+        raise fail(UnknownFormatError, "err.io.utf8", path=p, byte=exc.start) from exc
     return loads(text, source=str(p))

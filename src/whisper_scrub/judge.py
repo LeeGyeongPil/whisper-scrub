@@ -9,6 +9,7 @@ from typing import Any, Iterable, Optional, Union
 from . import rules
 from .config import Config
 from .errors import ConfigError
+from .i18n import fail
 from .io import Document, load, segments_from_items
 from .model import KEEP, REMOVE, SUSPECT, RuleHit, ScrubResult, Segment, Verdict
 from .normalize import normalize
@@ -65,7 +66,7 @@ def scrub(
     if audio_duration is None and doc is not None:
         audio_duration = doc.duration
     if audio_duration is not None and audio_duration <= 0:
-        raise ConfigError(f"audio_duration must be positive, got {audio_duration}")
+        raise fail(ConfigError, "err.config.audio_duration", value=audio_duration)
     spans = normalize_intervals(speech) if speech is not None else None
 
     norms = [normalize(s.text) for s in segs]
@@ -146,14 +147,14 @@ def scrub_file(
     """
     src = Path(path)
     if not dry_run and out is None:
-        raise ConfigError("scrub_file needs out=<path> to write the cleaned file (or dry_run=True)")
+        raise fail(ConfigError, "err.config.need_out")
     if out is not None and Path(out).resolve() == src.resolve():
-        raise ConfigError("out must differ from the input path; whisper-scrub never overwrites its input")
+        raise fail(ConfigError, "err.config.same_out")
     doc = load(src)
 
     spans: Optional[list[Interval]] = None
     if audio is not None and speech is not None:
-        raise ConfigError("pass either audio= or speech=, not both")
+        raise fail(ConfigError, "err.config.audio_and_speech")
     if audio is not None:
         spans, wav_duration = energy_vad(audio)
         if audio_duration is None:

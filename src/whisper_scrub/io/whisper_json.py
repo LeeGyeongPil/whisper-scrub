@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import Any, Collection, Iterable, Optional
 
 from ..errors import UnknownFormatError
+from ..i18n import Reason, fail
 from ..model import Segment
 from .document import Document
 
@@ -48,10 +49,7 @@ def segments_from_items(items: Iterable[Any]) -> list[Segment]:
             start, end = _num(_get(item, "start")), _num(_get(item, "end"))
         text = _get(item, "text")
         if start is None or end is None or not isinstance(text, str):
-            raise UnknownFormatError(
-                f"segment {pos} needs start, end and text (or whisper.cpp offsets.from/to); "
-                f"got a {type(item).__name__} without them"
-            )
+            raise fail(UnknownFormatError, "err.io.segment", pos=pos, kind=type(item).__name__)
         out.append(
             Segment(
                 pos,
@@ -114,7 +112,7 @@ def parse_json(raw: str, bom: bool = False, source: Optional[str] = None) -> Jso
     try:
         data = json.loads(raw)
     except json.JSONDecodeError as exc:
-        raise UnknownFormatError(f"input looks like JSON but does not parse: {exc}") from exc
+        raise fail(UnknownFormatError, "err.io.json_parse", reason=Reason(exc)) from exc
     if isinstance(data, dict) and isinstance(data.get("segments"), list):
         fmt, key, items = "whisper-json", "segments", data["segments"]
     elif isinstance(data, dict) and isinstance(data.get("transcription"), list):
@@ -122,10 +120,7 @@ def parse_json(raw: str, bom: bool = False, source: Optional[str] = None) -> Jso
     elif isinstance(data, list):
         fmt, key, items = "segment-list-json", None, data
     else:
-        raise UnknownFormatError(
-            "JSON must be an object with a 'segments' or 'transcription' list, "
-            "or a list of segments with start/end/text"
-        )
+        raise fail(UnknownFormatError, "err.io.json_shape")
     duration = _num(data.get("duration")) if isinstance(data, dict) else None
     return JsonDocument(
         format=fmt,

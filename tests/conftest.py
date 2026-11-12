@@ -47,3 +47,13 @@ def make_wav(tmp_path):
         return path
 
     return _make
+
+
+@pytest.fixture(autouse=True)
+def _pin_display_language(monkeypatch):
+    """Keep every test on English screens whatever LC_ALL/LANG the machine has."""
+    from whisper_scrub import i18n
+
+    monkeypatch.setenv("WHISPER_SCRUB_LANG", "en")
+    yield
+    i18n.set_lang("en")

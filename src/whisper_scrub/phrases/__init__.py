@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Iterable, Optional, Union
 
 from ..errors import ConfigError
+from ..i18n import Reason, fail
 from ..normalize import detect_lang, normalize
 
 LANGUAGES = ("ko", "en", "ja", "zh")
@@ -69,9 +70,9 @@ class PhraseBook:
         try:
             text = p.read_text(encoding="utf-8-sig")
         except OSError as exc:
-            raise ConfigError(f"cannot read phrase file {p}: {exc.strerror or exc}") from exc
+            raise fail(ConfigError, "err.phrases.read", path=p, reason=Reason(exc)) from exc
         except UnicodeDecodeError as exc:
-            raise ConfigError(f"phrase file {p} is not UTF-8; re-save it as UTF-8") from exc
+            raise fail(ConfigError, "err.phrases.utf8", path=p) from exc
         return cls(_parse(text, default_lang=None, where=str(p), default_level=default_level, user=True))
 
     # -- reading ----------------------------------------------------------
@@ -114,15 +115,12 @@ def _parse(
         level = cols[1].strip() if len(cols) > 1 and cols[1].strip() else default_level
         source = cols[2].strip() if len(cols) > 2 else ("user" if user else "")
         if level not in LEVELS:
-            raise ConfigError(
-                f"{where}:{no}: level {level!r} must be 'strict' or 'weak' "
-                "(format: phrase<TAB>strict|weak)"
-            )
+            raise fail(ConfigError, "err.phrases.level", where=where, no=no, level=level)
         norm = normalize(phrase)
         if not norm:
-            raise ConfigError(f"{where}:{no}: phrase {phrase!r} is empty after normalisation")
+            raise fail(ConfigError, "err.phrases.empty", where=where, no=no, phrase=phrase)
         lang = default_lang or detect_lang(norm)
         if not lang:
-            raise ConfigError(f"{where}:{no}: phrase {phrase!r} has no letters")
+            raise fail(ConfigError, "err.phrases.no_letters", where=where, no=no, phrase=phrase)
         out.append(PhraseEntry(phrase, norm, lang, level, source))
     return out

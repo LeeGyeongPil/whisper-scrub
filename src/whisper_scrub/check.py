@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Optional
 
+from .i18n import translate
 from .model import ScrubResult
 from .normalize import normalize
 
@@ -20,13 +21,24 @@ class CheckReport:
     speechless_char_ratio: Optional[float]  # None when no audio/speech information
     fast_segments: int  # characters per second above the configured maximum
 
-    def summary_line(self) -> str:
-        speechless = "n/a" if self.speechless_char_ratio is None else f"{self.speechless_char_ratio:.2f}"
-        return (
-            f"flagged {self.flagged}/{self.segments} ({self.flagged_ratio:.2f}) | "
-            f"removed {self.removed} | suspect {self.suspect} | "
-            f"repeat runs: {self.repeat_runs} | speechless chars: {speechless} | "
-            f"fast segments: {self.fast_segments}"
+    def summary_line(self, lang: str = "en") -> str:
+        """One-line summary; English unless ``lang="ko"`` is passed."""
+        speechless = (
+            translate(lang, "out.na")
+            if self.speechless_char_ratio is None
+            else f"{self.speechless_char_ratio:.2f}"
+        )
+        return translate(
+            lang,
+            "check.summary",
+            flagged=self.flagged,
+            segments=self.segments,
+            ratio=self.flagged_ratio,
+            removed=self.removed,
+            suspect=self.suspect,
+            repeat_runs=self.repeat_runs,
+            speechless=speechless,
+            fast=self.fast_segments,
         )
 
     def as_dict(self) -> dict[str, Any]:

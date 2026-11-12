@@ -25,6 +25,7 @@ from __future__ import annotations
 from typing import Optional, Sequence
 
 from .config import Config
+from .i18n import MESSAGES
 from .model import RuleHit, Segment
 from .normalize import detect_lang, normalize
 from .vad import Interval, overlap_ratio
@@ -144,11 +145,8 @@ def meta_silent_window(seg: Segment, cfg: Config) -> Optional[RuleHit]:
     return None
 
 
-SPEECH_GUARD_WARNING = (
-    "speech intervals cover almost none of the transcript - check the file and its units (seconds) "
-    "or the recording level; the audio rules were skipped, so nothing was deleted "
-    "because of the audio"
-)
+# English text stored in ScrubResult.warnings; the CLI shows it in the display language.
+SPEECH_GUARD_WARNING = MESSAGES["en"]["warn.speech_guard"]
 
 
 def speech_intervals_untrustworthy(

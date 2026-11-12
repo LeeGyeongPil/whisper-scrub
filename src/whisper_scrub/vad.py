@@ -8,13 +8,11 @@ from pathlib import Path
 from typing import Any, Iterable, Optional, Union
 
 from .errors import AudioError, MissingExtraError, ScrubError
+from .i18n import MESSAGES, Reason, fail
 
 Interval = tuple[float, float]
 
-NUMPY_HINT = (
-    'numpy is required for --audio (energy VAD). Install it with: pip install "whisper-scrub[audio]" '
-    "(or pass --speech with a speech-interval JSON you already have; that needs no extras)"
-)
+NUMPY_HINT = MESSAGES["en"]["err.vad.numpy"]
 
 
 def normalize_intervals(items: Iterable[Any]) -> list[Interval]:
@@ -27,11 +25,9 @@ def normalize_intervals(items: Iterable[Any]) -> list[Interval]:
             else:
                 s, e = float(it[0]), float(it[1])
         except (KeyError, IndexError, TypeError, ValueError) as exc:
-            raise ScrubError(
-                f"speech interval {n} is not {{'start': s, 'end': e}} or [s, e] in seconds: {it!r}"
-            ) from exc
+            raise fail(ScrubError, "err.vad.interval_format", n=n, item=it) from exc
         if e < s:
-            raise ScrubError(f"speech interval {n} ends before it starts: {it!r}")
+            raise fail(ScrubError, "err.vad.interval_order", n=n, item=it)
         spans.append((s, e))
     spans.sort()
     merged: list[Interval] = []
@@ -53,13 +49,13 @@ def load_speech_json(path: Union[str, Path]) -> list[Interval]:
     try:
         data = json.loads(p.read_text(encoding="utf-8-sig"))
     except OSError as exc:
-        raise ScrubError(f"cannot read speech file {p}: {exc.strerror or exc}") from exc
+        raise fail(ScrubError, "err.vad.read", path=p, reason=Reason(exc)) from exc
     except json.JSONDecodeError as exc:
-        raise ScrubError(f"speech file {p} is not valid JSON: {exc}") from exc
+        raise fail(ScrubError, "err.vad.json", path=p, reason=Reason(exc)) from exc
     if isinstance(data, dict) and isinstance(data.get("speech"), list):
         data = data["speech"]
     if not isinstance(data, list):
-        raise ScrubError(f"speech file {p} must be a list of intervals or an object with a 'speech' list")
+        raise fail(ScrubError, "err.vad.shape", path=p)
     return normalize_intervals(data)
 
 
@@ -95,7 +91,7 @@ def energy_vad(
     try:
         import numpy as np
     except ImportError as exc:
-        raise MissingExtraError(NUMPY_HINT) from exc
+        raise fail(MissingExtraError, "err.vad.numpy") from exc
 
     p = Path(path)
     try:
@@ -103,15 +99,9 @@ def energy_vad(
             rate, width, channels, frames = w.getframerate(), w.getsampwidth(), w.getnchannels(), w.getnframes()
             raw = w.readframes(frames)
     except (OSError, EOFError, wave.Error) as exc:
-        raise AudioError(
-            f"cannot read {p} as a WAV file ({exc}). Convert first, e.g. "
-            "`ffmpeg -i input.mp3 -ar 16000 -ac 1 -c:a pcm_s16le out.wav`"
-        ) from exc
+        raise fail(AudioError, "err.vad.wav", path=p, reason=Reason(exc)) from exc
     if width != 2:
-        raise AudioError(
-            f"{p} is {width * 8}-bit PCM; only 16-bit is supported. "
-            "Convert with `ffmpeg -i in.wav -c:a pcm_s16le out.wav`"
-        )
+        raise fail(AudioError, "err.vad.width", path=p, bits=width * 8)
     duration = frames / rate if rate else 0.0
     samples = np.frombuffer(raw, dtype="<i2").astype(np.float32) / 32768.0
     if channels > 1:

@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from ._version import __version__
+from .i18n import localize_warning, translate
 from .model import KEEP, REMOVE, SUSPECT, RuleHit, ScrubResult, Segment
 
 REPORT_VERSION = 1
@@ -94,28 +95,39 @@ def _cell(text: str, limit: int = 60) -> str:
     return t.replace("|", "\\|")
 
 
-def markdown_report(result: ScrubResult) -> str:
+def markdown_report(result: ScrubResult, lang: str = "en") -> str:
+    """Markdown report. English by default; ``lang="ko"`` translates the labels (not the rule notes)."""
+
+    def t(key: str, **params: Any) -> str:
+        return translate(lang, key, **params)
+
     n = len(result.segments)
     rem, sus = len(result.removed), len(result.suspects)
-    lines = ["# whisper-scrub report", ""]
-    lines.append(f"- input: {result.source or '(in memory)'}" + (f" ({result.format})" if result.format else ""))
-    lines.append(f"- segments: {n} (removed {rem}, suspect {sus}, kept {n - rem - sus})")
-    if result.audio_duration is not None:
-        lines.append(f"- audio duration: {result.audio_duration:g} s")
+    lines = [t("report.title"), ""]
     lines.append(
-        "- speech intervals: " + ("not provided" if result.speech is None else str(len(result.speech)))
+        t("report.input", source=result.source or t("report.in_memory"))
+        + (t("report.input_format", format=result.format) if result.format else "")
     )
-    lines.append(f"- tool: whisper-scrub {__version__} (report_version {REPORT_VERSION})")
+    lines.append(t("report.segments", total=n, removed=rem, suspect=sus, kept=n - rem - sus))
+    if result.audio_duration is not None:
+        lines.append(t("report.audio_duration", seconds=result.audio_duration))
+    lines.append(
+        t(
+            "report.speech_intervals",
+            value=t("report.not_provided") if result.speech is None else str(len(result.speech)),
+        )
+    )
+    lines.append(t("report.tool", version=__version__, report_version=REPORT_VERSION))
     for w in result.warnings:
-        lines.append(f"- WARNING: {w}")
+        lines.append(t("report.warning", text=localize_warning(w, lang)))
     lines.append("")
 
     flagged = [(s, v) for s, v in zip(result.segments, result.verdicts) if v.action != KEEP]
     if not flagged:
-        lines += ["No segments were flagged.", ""]
+        lines += [t("report.none_flagged"), ""]
     else:
         lines += [
-            "| # | time (s) | action | confidence | rules | text |",
+            t("report.table_header"),
             "|---|---|---|---|---|---|",
         ]
         for s, v in flagged:
@@ -123,26 +135,41 @@ def markdown_report(result: ScrubResult) -> str:
             lines.append(
                 f"| {s.index} | {s.start:.2f}-{s.end:.2f} | {v.action} | {v.confidence} | {rules} | {_cell(s.text)} |"
             )
-        lines += ["", "## Evidence", ""]
+        lines += ["", t("report.evidence_title"), ""]
         for s, v in flagged:
             for h in v.rules:
-                lines.append(f"- #{s.index} {v.action}: `{h.rule_id}` value={h.value} threshold={h.threshold} - {h.note}")
+                lines.append(
+                    t(
+                        "report.evidence_line",
+                        index=s.index,
+                        action=v.action,
+                        rule=h.rule_id,
+                        value=h.value,
+                        threshold=h.threshold,
+                        note=h.note,
+                    )
+                )
         lines.append("")
 
     groups = shared_meta_groups(result.segments)
     if groups:
-        lines += ["## Shared meta values", ""]
+        lines += [t("report.shared_title"), ""]
         for g in groups:
             ids = g["segments"]
             lines.append(
-                f"- segments {ids[0]}-{ids[-1]} ({len(ids)} segments) have the same meta values: "
-                f"no_speech_prob={g['no_speech_prob']}, avg_logprob={g['avg_logprob']}, "
-                f"compression_ratio={g['compression_ratio']}. Whisper computes them per decoding window, "
-                "so meta signals cannot tell these segments apart."
+                t(
+                    "report.shared_line",
+                    first=ids[0],
+                    last=ids[-1],
+                    count=len(ids),
+                    no_speech_prob=g["no_speech_prob"],
+                    avg_logprob=g["avg_logprob"],
+                    compression_ratio=g["compression_ratio"],
+                )
             )
         lines.append("")
 
-    lines += ["## Thresholds", ""]
+    lines += [t("report.thresholds_title"), ""]
     th = result.config.thresholds()
     lines.append(", ".join(f"{k}={v}" for k, v in th.items()))
     lines.append("")

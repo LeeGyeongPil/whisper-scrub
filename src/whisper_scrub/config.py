@@ -6,6 +6,7 @@ from dataclasses import dataclass, field, fields
 from typing import Any, Optional
 
 from .errors import ConfigError
+from .i18n import fail
 from .phrases import PhraseBook
 
 
@@ -53,13 +54,13 @@ class Config:
         for name in ("no_speech_threshold", "silent_no_speech", "speech_overlap_min", "speech_guard_ratio"):
             v = getattr(self, name)
             if not 0.0 <= v <= 1.0:
-                raise ConfigError(f"{name} must be between 0 and 1, got {v}")
+                raise fail(ConfigError, "err.config.range", name=name, value=v)
         if self.silent_logprob > 0:
-            raise ConfigError(f"silent_logprob must be <= 0 (it is a log probability), got {self.silent_logprob}")
+            raise fail(ConfigError, "err.config.silent_logprob", value=self.silent_logprob)
         if self.repeat_min < 2:
-            raise ConfigError(f"repeat_min must be at least 2, got {self.repeat_min}")
+            raise fail(ConfigError, "err.config.repeat_min", value=self.repeat_min)
         if self.loop_min < 2:
-            raise ConfigError(f"loop_min must be at least 2, got {self.loop_min}")
+            raise fail(ConfigError, "err.config.loop_min", value=self.loop_min)
         for name in (
             "repeat_max_gap",
             "phantom_min_seconds",
@@ -69,9 +70,9 @@ class Config:
             "max_chars_per_second",
         ):
             if getattr(self, name) < 0:
-                raise ConfigError(f"{name} must not be negative, got {getattr(self, name)}")
+                raise fail(ConfigError, "err.config.negative", name=name, value=getattr(self, name))
         if self.lang is not None and self.lang not in ("ko", "en", "ja", "zh"):
-            raise ConfigError(f"lang must be one of ko, en, ja, zh (got {self.lang!r})")
+            raise fail(ConfigError, "err.config.lang", value=self.lang)
 
     def book(self) -> PhraseBook:
         if self.phrases is None:

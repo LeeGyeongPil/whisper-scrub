@@ -105,10 +105,11 @@ class ScrubResult:
             return 0.0
         return (len(self.removed) + len(self.suspects)) / len(self.segments)
 
-    def report_markdown(self) -> str:
+    def report_markdown(self, lang: str = "en") -> str:
+        """Markdown report; ``lang`` (``"en"`` default, or ``"ko"``) only changes the labels."""
         from .report import markdown_report
 
-        return markdown_report(self)
+        return markdown_report(self, lang=lang)
 
     def report_json(self) -> dict[str, Any]:
         from .report import json_report
