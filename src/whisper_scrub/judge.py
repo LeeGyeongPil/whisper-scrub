@@ -75,7 +75,7 @@ def scrub(
     trusted = not rules.speech_intervals_untrustworthy(segs, norms, spans, cfg)
     if not trusted:
         warnings.append(rules.SPEECH_GUARD_WARNING)
-    # untrusted intervals are ignored by every audio rule (as if --speech was not given)
+    # untrusted intervals are ignored by every speech-interval rule (audio.no_speech and the speech counter-evidence; as if --speech was not given)
     rule_spans = spans if trusted else None
     runs = rules.repeat_runs(segs, norms, cfg)
     run_info: dict[int, tuple[int, int]] = {}

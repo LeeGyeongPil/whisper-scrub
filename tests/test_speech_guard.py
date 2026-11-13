@@ -137,3 +137,28 @@ def test_cli_phantom_min_seconds_option(tmp_path, capsys):
     assert "removed 1" in capsys.readouterr().err
     assert main(base + ["--phantom-min-seconds", "60"]) == 0
     assert "removed 0" in capsys.readouterr().err
+
+
+def test_warning_does_not_claim_beyond_end_is_skipped(tmp_path, make_wav):
+    """Regression: the warning must not contradict an audio.beyond_end removal in the same run."""
+    from whisper_scrub.i18n import MESSAGES, localize_warning
+
+    wav = make_wav([("silence", 10)])
+    spans, duration = energy_vad(wav)
+    segs = [
+        {"start": 0.0, "end": 3.0, "text": " And so my fellow Americans, ask not what you can do."},
+        {"start": 3.0, "end": 6.0, "text": " Ask what you can do for your country today."},
+        {"start": 6.0, "end": 9.0, "text": " The only thing we have to fear is fear itself."},
+        {"start": 12.0, "end": 14.0, "text": " Thank you all for coming tonight."},
+    ]
+    result = scrub(segs, speech=spans, audio_duration=duration)
+    assert result.warnings
+    assert result.verdicts[3].action == "remove"
+    assert "audio.beyond_end" in [h.rule_id for h in result.verdicts[3].rules]
+    assert len(result.removed) == 1
+    for lang in ("en", "ko"):
+        text = localize_warning(result.warnings[0], lang)
+        assert "audio.beyond_end" in text
+        assert "the audio rules were skipped" not in text
+        assert "오디오 규칙을 건너뛰었으므로" not in text
+        assert "audio.beyond_end" in MESSAGES[lang]["warn.speech_guard"]

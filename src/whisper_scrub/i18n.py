@@ -75,8 +75,8 @@ MESSAGES: dict[str, dict[str, str]] = {
         # -- warnings (stderr display; ScrubResult.warnings stays English) -----
         "warn.speech_guard": (
             "speech intervals cover almost none of the transcript - check the file and its units (seconds) "
-            "or the recording level; the audio rules were skipped, so nothing was deleted "
-            "because of the audio"
+            "or the recording level; the speech-interval rule (audio.no_speech) was skipped, so nothing was "
+            "deleted because of missing speech (audio.beyond_end, based on the audio length, still applies)"
         ),
         # -- errors ---------------------------------------------------------
         "err.cli.audio_and_speech": "use either --audio or --speech, not both",
@@ -218,7 +218,8 @@ MESSAGES: dict[str, dict[str, str]] = {
         ),
         "warn.speech_guard": (
             "말소리 구간이 전사본을 거의 덮지 못합니다 - 파일과 단위(초) 또는 녹음 크기를 확인하세요. "
-            "오디오 규칙을 건너뛰었으므로 오디오 때문에 지워진 구간은 없습니다"
+            "말소리 구간 규칙(audio.no_speech)을 건너뛰었으므로 말소리가 없다는 이유로 지워진 구간은 없습니다"
+            "(오디오 길이 규칙 audio.beyond_end 는 그대로 적용됩니다)"
         ),
         "err.cli.audio_and_speech": "--audio 와 --speech 는 함께 쓸 수 없습니다. 하나만 고르세요",
         "err.cli.need_output": "clean 은 새 파일을 씁니다. -o FILE 을 주거나, 보고서만 보려면 --dry-run 을 쓰세요",
