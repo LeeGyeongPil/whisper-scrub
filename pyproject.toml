@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "whisper-scrub"
-version = "0.2.1"
+version = "0.2.2"
 description = "Find and remove Whisper hallucinations (phantom sentences on silence, repeat loops) from transcripts and subtitles, with a per-segment evidence report."
 readme = "README.md"
 license = "MIT"
