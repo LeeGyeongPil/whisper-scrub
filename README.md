@@ -2,7 +2,7 @@
 
 **English** | [한국어](README.ko.md)
 
-A small Python library and CLI that finds and removes Whisper hallucinations (phantom sentences on silence or noise such as `You`, and same-sentence repeat loops) from JSON, SRT and VTT transcripts made by openai-whisper, faster-whisper, whisper.cpp or the OpenAI API. It combines a phrase dictionary, repeat rules, Whisper's own signals and (optionally) audio, keeps timecodes and untouched cues byte-for-byte, and writes a per-segment evidence report on why each was removed. Even without a ground-truth transcript, `check` shows a file's share of suspected hallucinations. Install (not on PyPI yet, so install from the GitHub tag): `pip install "whisper-scrub[audio] @ git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.1"`, run: `whisper-scrub clean talk.srt --dry-run --report -`. The bundled examples are recorded real outputs ("mock" inputs, no model runs when you try them).
+A small Python library and CLI that finds and removes Whisper hallucinations (phantom sentences on silence or noise such as `You`, and same-sentence repeat loops) from JSON, SRT and VTT transcripts made by openai-whisper, faster-whisper, whisper.cpp or the OpenAI API. It combines a phrase dictionary, repeat rules, Whisper's own signals and (optionally) audio, keeps timecodes and untouched cues byte-for-byte, and writes a per-segment evidence report on why each was removed. Even without a ground-truth transcript, `check` shows a file's share of suspected hallucinations. Install (not on PyPI yet, so install from the GitHub tag): `pip install "whisper-scrub[audio] @ git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.2"`, run: `whisper-scrub clean talk.srt --dry-run --report -`. The bundled examples are recorded real outputs ("mock" inputs, no model runs when you try them).
 
 ## What it does
 
@@ -18,9 +18,9 @@ Imagine a transcriber who writes "시청해 주셔서 감사합니다" ("Thank y
 
 ```bash
 # Install from the tag-pinned GitHub release (needs git on your PATH)
-pip install "whisper-scrub[audio] @ git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.1"
+pip install "whisper-scrub[audio] @ git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.2"
 # With uv, without installing
-uvx --from git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.1 whisper-scrub --help
+uvx --from git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.2 whisper-scrub --help
 ```
 
 If the project is already published on PyPI, the bare package name works too (if the install fails with "no matching distribution", it is not published yet; use the GitHub tag install above):
@@ -32,7 +32,7 @@ pip install "whisper-scrub[audio]"   # once published on PyPI
 - Python 3.10 or later. The base install has 0 runtime dependencies. The `[audio]` extra adds only numpy, and it is needed only when you read audio files directly (`--audio`). If you will use only a speech-interval JSON (`--speech`) or meta signals, `pip install whisper-scrub` (once published on PyPI) or the same GitHub command without `[audio]` is enough.
 - With uv, once published on PyPI: `uv add "whisper-scrub[audio]"`, or without installing, `uvx whisper-scrub --help`. (Install uv: `curl -LsSf https://astral.sh/uv/install.sh | sh`)
 - Install from source: `pip install "git+https://github.com/LeeGyeongPil/whisper-scrub"` (installs with `git+` need git installed)
-- The tag-pinned GitHub install via `uvx --from git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.0 whisper-scrub --lang en --version` was confirmed to run (v0.2.0, the same install form as v0.2.1). The PyPI commands were not run here.
+- The tag-pinned GitHub install via `uvx --from git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.0 whisper-scrub --lang en --version` was confirmed to run (confirmed on v0.2.0; the tag-pinned install form is the same for every version). The PyPI commands were not run here.
 
 ## Quick start
 
@@ -62,7 +62,7 @@ whisper-scrub: removed 7, suspect 1, kept 2 of 10 segments (dry run, nothing wri
 - input: examples/mixed_ko.srt (srt)
 - segments: 10 (removed 7, suspect 1, kept 2)
 - speech intervals: not provided
-- tool: whisper-scrub 0.2.1 (report_version 1)
+- tool: whisper-scrub 0.2.2 (report_version 1)
 
 | # | time (s) | action | confidence | rules | text |
 |---|---|---|---|---|---|
@@ -213,15 +213,15 @@ uv run whisper-scrub clean examples/mixed_en.srt --speech empty.json --dry-run -
 ```
 
 ```text
-whisper-scrub: warning: speech intervals cover almost none of the transcript - check the file and its units (seconds) or the recording level; the audio rules were skipped, so nothing was deleted because of the audio
+whisper-scrub: warning: speech intervals cover almost none of the transcript - check the file and its units (seconds) or the recording level; the speech-interval rule (audio.no_speech) was skipped, so nothing was deleted because of missing speech (audio.beyond_end, based on the audio length, still applies)
 whisper-scrub: removed 0, suspect 1, kept 2 of 3 segments (dry run, nothing written)
 # whisper-scrub report
 
 - input: examples/mixed_en.srt (srt)
 - segments: 3 (removed 0, suspect 1, kept 2)
 - speech intervals: 0
-- tool: whisper-scrub 0.2.1 (report_version 1)
-- WARNING: speech intervals cover almost none of the transcript - check the file and its units (seconds) or the recording level; the audio rules were skipped, so nothing was deleted because of the audio
+- tool: whisper-scrub 0.2.2 (report_version 1)
+- WARNING: speech intervals cover almost none of the transcript - check the file and its units (seconds) or the recording level; the speech-interval rule (audio.no_speech) was skipped, so nothing was deleted because of missing speech (audio.beyond_end, based on the audio length, still applies)
 
 | # | time (s) | action | confidence | rules | text |
 |---|---|---|---|---|---|
@@ -358,7 +358,7 @@ result = scrub(segments, config=Config(phrases=book, repeat_min=4))
 
 - **The ko, ja and zh dictionaries are thin.** Only 1 Korean, 2 Japanese and 3 Chinese entries (the principle is to include only what was confirmed by reproduction). Most Korean phrases are caught not by the dictionary but by `repeat.run`, meta and audio signals. Put phrases you see in your own data into the user dictionary.
 - **Speech intervals that are wrong only in part can still delete real speech.** A segment with 0 overlap and 1 second or longer is deleted alone by `audio.no_speech` even if the sentence is not in the dictionary. If the intervals are empty or do not overlap with most sentences, it warns and ignores them, but intervals that are off only in part are followed as they are. The energy detector cannot separate speech from loud noise. Look with `--dry-run` first. Change the 1-second criterion with `--phantom-min-seconds`.
-- **For a recording that is silent throughout, the audio rules are turned off because of the safeguard.** A hallucination over a file with no speech at all cannot be caught by `audio.no_speech`. If the file really is like that, force it with `--no-speech-guard`.
+- **For a recording that is silent throughout, the `audio.no_speech` rule is turned off because of the safeguard (`audio.beyond_end` stays on).** A hallucination over a file with no speech at all cannot be caught by `audio.no_speech`. If the file really is like that, force it with `--no-speech-guard`.
 - **The same sentence 3 or more times in a row is collapsed.** "네 네 네" in real conversation can be collapsed too. Adjust with `--repeat-min N` (in Python, `Config(repeat_min=...)`).
 - Audio is read directly only as 16-bit PCM WAV. Convert other formats with ffmpeg first.
 - There is not yet a real mode (a `[whisper]` extra that runs transcription as well in one go). All examples are recorded inputs.
@@ -368,7 +368,7 @@ result = scrub(segments, config=Config(phrases=book, repeat_min=4))
 | Symptom | Cause | Fix |
 |---|---|---|
 | A single `You` line is not deleted and appears only as `suspect` | An SRT has no meta signals and there is no audio evidence | Give `--speech` (speech-interval JSON) or `--audio` |
-| CLI: `whisper-scrub: error: numpy is required for --audio ...` (exit code 2), Python API: `MissingExtraError` | numpy is missing | `pip install "whisper-scrub[audio] @ git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.1"` (or `pip install "whisper-scrub[audio]"` once published on PyPI) |
+| CLI: `whisper-scrub: error: numpy is required for --audio ...` (exit code 2), Python API: `MissingExtraError` | numpy is missing | `pip install "whisper-scrub[audio] @ git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.2"` (or `pip install "whisper-scrub[audio]"` once published on PyPI) |
 | CLI: `whisper-scrub: error: cannot read <file> as a WAV file ...`, Python API: `AudioError` | The input is not a WAV or not 16-bit | `ffmpeg -i in.mp3 -ar 16000 -ac 1 -c:a pcm_s16le out.wav` |
 | `UnknownFormatError` | An unsupported JSON or subtitle format | Convert to a supported format (list above), or pass the segment list directly to `scrub()` |
 | Exit code 2 | Usage error (arguments, file path, `-o` equal to the input, etc.) | Follow the guidance in the one-line message |
@@ -380,7 +380,7 @@ result = scrub(segments, config=Config(phrases=book, repeat_min=4))
 ## Versions and compatibility
 
 - Follows Semantic Versioning (SemVer). During 0.x, the API may change in minor versions, and changes are recorded in [CHANGELOG.md](CHANGELOG.md).
-- Currently 0.2.1. Python 3.10 to 3.14 is declared as supported, and CI runs on 3.10 and 3.12 (ubuntu).
+- Currently 0.2.2. Python 3.10 to 3.14 is declared as supported, and CI runs on 3.10 and 3.12 (ubuntu).
 
 ## Development and contributing
 
@@ -390,7 +390,7 @@ uv run pytest -q
 ```
 
 ```text
-159 passed, 1 skipped in 0.61s
+160 passed, 1 skipped in 0.69s
 ```
 
 The 1 skipped test is the test marked `real` that needs a real model (skipped if `WHISPER_SCRUB_MODEL_DIR` is not set). A contribution that adds a phrase to the dictionary must come with **the evidence of a reproduced run (model, input, output)**.

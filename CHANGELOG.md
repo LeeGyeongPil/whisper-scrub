@@ -4,6 +4,25 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-11-13
+
+### Fixed
+- The speech-interval safeguard warning said "the audio rules were skipped", but only `audio.no_speech` is
+  skipped; `audio.beyond_end` (based on the audio length) still applies and can remove segments in the same
+  run. The warning (English and Korean), the README safeguard notes and a code comment now name the rule
+  that is actually skipped. Verdicts, exit codes and JSON keys are unchanged.
+
+### Changed
+- The English text of the warning (`SPEECH_GUARD_WARNING`, `ScrubResult.warnings`, JSON `warnings`) changed;
+  scripts that compared the old string must be updated. The 0.1.0 known limitation about this wording is
+  resolved.
+
+### Known issues
+- When only `--speech` is given and the audio length is unknown (no `--audio`, `--duration` or JSON
+  duration), the warning still says `audio.beyond_end` applies; it only runs when the length is known.
+- In the Korean display language the rule explanations under Evidence stay in English.
+- The numpy hint (see 0.2.1) still suggests the PyPI form until the package is published.
+
 ## [0.2.1] - 2026-11-13
 
 ### Fixed

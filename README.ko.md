@@ -18,9 +18,9 @@ Whisper(openai-whisper, faster-whisper, whisper.cpp, OpenAI API)가 만든 전�
 
 ```bash
 # 태그 고정 GitHub 릴리스에서 설치 (git 이 PATH 에 있어야 함)
-pip install "whisper-scrub[audio] @ git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.1"
+pip install "whisper-scrub[audio] @ git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.2"
 # uv 로 설치 없이 실행
-uvx --from git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.1 whisper-scrub --help
+uvx --from git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.2 whisper-scrub --help
 ```
 
 PyPI 에 이미 게시됐다면 패키지 이름만 쓰는 아래 명령도 동작합니다("no matching distribution" 오류가 나면 아직 게시 전이니 위 GitHub 태그 설치를 쓰세요).
@@ -32,7 +32,7 @@ pip install "whisper-scrub[audio]"   # PyPI 게시 뒤
 - Python 3.10 이상. 기본 설치는 런타임 의존성이 0개입니다. `[audio]` extra 는 numpy 하나만 추가하며, 오디오 파일(`--audio`)을 직접 읽을 때만 필요합니다. 음성 구간 JSON(`--speech`)이나 메타 신호만 쓸 거라면 `pip install whisper-scrub`(PyPI 게시 뒤) 또는 `[audio]` 없는 같은 GitHub 명령으로 충분합니다.
 - uv 를 쓰면(PyPI 게시 뒤): `uv add "whisper-scrub[audio]"` 또는 설치 없이 `uvx whisper-scrub --help`. (uv 설치: `curl -LsSf https://astral.sh/uv/install.sh | sh`)
 - 소스에서 설치: `pip install "git+https://github.com/LeeGyeongPil/whisper-scrub"` (`git+` 설치에는 git 이 필요합니다)
-- `uvx --from git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.0 whisper-scrub --lang en --version` 로 태그 고정 GitHub 설치가 동작하는 것을 확인했습니다(v0.2.0, v0.2.1 과 같은 설치 형식). PyPI 명령은 여기서 실행해 보지 않았습니다.
+- `uvx --from git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.0 whisper-scrub --lang en --version` 로 태그 고정 GitHub 설치가 동작하는 것을 확인했습니다(v0.2.0 에서 확인했고, 태그 고정 설치 형식은 버전마다 같습니다). PyPI 명령은 여기서 실행해 보지 않았습니다.
 
 ## 빠르게 시작하기
 
@@ -62,7 +62,7 @@ whisper-scrub: 삭제 7개, 의심 1개, 유지 2개 (전체 10개 구간, 시�
 - 입력: examples/mixed_ko.srt (srt)
 - 구간: 10개 (삭제 7, 의심 1, 유지 2)
 - 말소리 구간: 주어지지 않음
-- 도구: whisper-scrub 0.2.1 (report_version 1)
+- 도구: whisper-scrub 0.2.2 (report_version 1)
 
 | # | 시간(초) | 동작 | 확신도 | 규칙 | 텍스트 |
 |---|---|---|---|---|---|
@@ -213,15 +213,15 @@ uv run whisper-scrub --lang ko clean examples/mixed_en.srt --speech empty.json -
 ```
 
 ```text
-whisper-scrub: 경고: 말소리 구간이 전사본을 거의 덮지 못합니다 - 파일과 단위(초) 또는 녹음 크기를 확인하세요. 오디오 규칙을 건너뛰었으므로 오디오 때문에 지워진 구간은 없습니다
+whisper-scrub: 경고: 말소리 구간이 전사본을 거의 덮지 못합니다 - 파일과 단위(초) 또는 녹음 크기를 확인하세요. 말소리 구간 규칙(audio.no_speech)을 건너뛰었으므로 말소리가 없다는 이유로 지워진 구간은 없습니다(오디오 길이 규칙 audio.beyond_end 는 그대로 적용됩니다)
 whisper-scrub: 삭제 0개, 의심 1개, 유지 2개 (전체 3개 구간, 시험 실행이라 아무것도 쓰지 않았습니다)
 # whisper-scrub 보고서
 
 - 입력: examples/mixed_en.srt (srt)
 - 구간: 3개 (삭제 0, 의심 1, 유지 2)
 - 말소리 구간: 0
-- 도구: whisper-scrub 0.2.1 (report_version 1)
-- 경고: 말소리 구간이 전사본을 거의 덮지 못합니다 - 파일과 단위(초) 또는 녹음 크기를 확인하세요. 오디오 규칙을 건너뛰었으므로 오디오 때문에 지워진 구간은 없습니다
+- 도구: whisper-scrub 0.2.2 (report_version 1)
+- 경고: 말소리 구간이 전사본을 거의 덮지 못합니다 - 파일과 단위(초) 또는 녹음 크기를 확인하세요. 말소리 구간 규칙(audio.no_speech)을 건너뛰었으므로 말소리가 없다는 이유로 지워진 구간은 없습니다(오디오 길이 규칙 audio.beyond_end 는 그대로 적용됩니다)
 
 | # | 시간(초) | 동작 | 확신도 | 규칙 | 텍스트 |
 |---|---|---|---|---|---|
@@ -358,7 +358,7 @@ result = scrub(segments, config=Config(phrases=book, repeat_min=4))
 
 - **ko·ja·zh 사전이 빈약합니다.** 한국어 1개·일본어 2개·중국어 3개뿐입니다(재현으로 확인한 것만 넣는 원칙). 한국어 문구 대부분은 사전이 아니라 `repeat.run`·메타·오디오 신호로 잡힙니다. 자기 데이터에서 본 문구는 사용자 사전에 넣으세요.
 - **일부만 틀린 음성 구간은 여전히 진짜 말을 지울 수 있습니다.** 겹침이 0이고 1초 이상인 세그먼트는 사전에 없는 문장이어도 `audio.no_speech` 로 단독 삭제됩니다. 구간이 비었거나 대부분의 문장과 안 겹치면 경고하고 무시하지만, 일부만 어긋난 구간은 그대로 따릅니다. 에너지 감지기는 말소리와 큰 잡음을 가르지 못합니다. 먼저 `--dry-run` 으로 보세요. 1초 기준은 `--phantom-min-seconds` 로 바꿉니다.
-- **전 구간이 무음인 녹음은 안전장치 때문에 오디오 규칙이 꺼집니다.** 말이 전혀 없는 파일 위의 환각은 `audio.no_speech` 로 못 잡습니다. 정말 그런 파일이면 `--no-speech-guard` 로 강제합니다.
+- **전 구간이 무음인 녹음은 안전장치 때문에 `audio.no_speech` 규칙이 꺼집니다(`audio.beyond_end` 는 남습니다).** 말이 전혀 없는 파일 위의 환각은 `audio.no_speech` 로 못 잡습니다. 정말 그런 파일이면 `--no-speech-guard` 로 강제합니다.
 - **같은 문장이 3번 이상 연속이면 접습니다.** 실제 대화의 "네 네 네"도 접힐 수 있습니다. `--repeat-min N`(Python 은 `Config(repeat_min=...)`)으로 조정합니다.
 - 오디오는 16-bit PCM WAV 만 직접 읽습니다. 다른 형식은 ffmpeg 로 먼저 바꿉니다.
 - 아직 실제 모드(전사까지 한 번에 돌리는 `[whisper]` extra)는 없습니다. 예제는 모두 녹화 입력입니다.
@@ -368,7 +368,7 @@ result = scrub(segments, config=Config(phrases=book, repeat_min=4))
 | 증상 | 원인 | 해결 |
 |---|---|---|
 | `You` 한 줄이 지워지지 않고 `suspect` 로만 나옴 | SRT 에는 메타 신호가 없고 오디오 근거도 없음 | `--speech`(음성 구간 JSON) 또는 `--audio` 를 준다 |
-| CLI: `whisper-scrub: 오류: numpy 가 있어야 --audio(에너지 VAD)를 쓸 수 있습니다 ...`(영어 화면: `error: numpy is required for --audio ...`, 종료 코드 2), Python API: `MissingExtraError` | numpy 가 없음 | `pip install "whisper-scrub[audio] @ git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.1"`(PyPI 게시 뒤에는 `pip install "whisper-scrub[audio]"`) |
+| CLI: `whisper-scrub: 오류: numpy 가 있어야 --audio(에너지 VAD)를 쓸 수 있습니다 ...`(영어 화면: `error: numpy is required for --audio ...`, 종료 코드 2), Python API: `MissingExtraError` | numpy 가 없음 | `pip install "whisper-scrub[audio] @ git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.2"`(PyPI 게시 뒤에는 `pip install "whisper-scrub[audio]"`) |
 | CLI: `whisper-scrub: 오류: <파일> 파일을 WAV 로 읽을 수 없습니다 ...`(영어 화면: `error: cannot read <file> as a WAV file ...`), Python API: `AudioError` | 입력이 WAV 가 아니거나 16-bit 가 아님 | `ffmpeg -i in.mp3 -ar 16000 -ac 1 -c:a pcm_s16le out.wav` |
 | `UnknownFormatError` | 지원하지 않는 JSON·자막 형식 | 지원 형식(위 목록)으로 바꾸거나 세그먼트 목록을 `scrub()` 에 직접 넘긴다 |
 | 종료 코드 2 | 사용 오류(인자·파일 경로·`-o` 가 입력과 같음 등) | 한 줄 메시지의 안내를 따른다 |
@@ -378,7 +378,7 @@ result = scrub(segments, config=Config(phrases=book, repeat_min=4))
 ## 버전·호환성
 
 - 유의적 버전(SemVer)을 따릅니다. 0.x 동안은 마이너 버전에서 API가 바뀔 수 있고, 바뀌면 [CHANGELOG.md](CHANGELOG.md)에 적습니다.
-- 현재 0.2.1. Python 3.10~3.14 지원 선언, CI 는 3.10·3.12(ubuntu).
+- 현재 0.2.2. Python 3.10~3.14 지원 선언, CI 는 3.10·3.12(ubuntu).
 
 ## 개발·기여
 
@@ -388,7 +388,7 @@ uv run pytest -q
 ```
 
 ```text
-159 passed, 1 skipped in 0.61s
+160 passed, 1 skipped in 0.69s
 ```
 
 건너뛴 1개는 실제 모델이 필요한 `real` 표시 테스트입니다(`WHISPER_SCRUB_MODEL_DIR` 이 없으면 skip). 문구를 사전에 추가하는 기여는 **재현한 실행 근거(모델·입력·출력)** 가 있어야 합니다.
