@@ -2,7 +2,7 @@
 
 **English** | [한국어](README.ko.md)
 
-A small Python library and CLI that finds and removes Whisper hallucinations (phantom sentences on silence or noise such as `You`, and same-sentence repeat loops) from JSON, SRT and VTT transcripts made by openai-whisper, faster-whisper, whisper.cpp or the OpenAI API. It combines a phrase dictionary, repeat rules, Whisper's own signals and (optionally) audio, keeps timecodes and untouched cues byte-for-byte, and writes a per-segment evidence report on why each was removed. Even without a ground-truth transcript, `check` shows a file's share of suspected hallucinations. Install: `pip install "whisper-scrub[audio]"`, run: `whisper-scrub clean talk.srt --dry-run --report -`. The bundled examples are recorded real outputs ("mock" inputs, no model runs when you try them).
+A small Python library and CLI that finds and removes Whisper hallucinations (phantom sentences on silence or noise such as `You`, and same-sentence repeat loops) from JSON, SRT and VTT transcripts made by openai-whisper, faster-whisper, whisper.cpp or the OpenAI API. It combines a phrase dictionary, repeat rules, Whisper's own signals and (optionally) audio, keeps timecodes and untouched cues byte-for-byte, and writes a per-segment evidence report on why each was removed. Even without a ground-truth transcript, `check` shows a file's share of suspected hallucinations. Install (not on PyPI yet, so install from the GitHub tag): `pip install "whisper-scrub[audio] @ git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.1"`, run: `whisper-scrub clean talk.srt --dry-run --report -`. The bundled examples are recorded real outputs ("mock" inputs, no model runs when you try them).
 
 ## What it does
 
@@ -17,13 +17,22 @@ Imagine a transcriber who writes "시청해 주셔서 감사합니다" ("Thank y
 ## Installation
 
 ```bash
-pip install "whisper-scrub[audio]"
+# Install from the tag-pinned GitHub release (needs git on your PATH)
+pip install "whisper-scrub[audio] @ git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.1"
+# With uv, without installing
+uvx --from git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.1 whisper-scrub --help
 ```
 
-- Python 3.10 or later. The base install has 0 runtime dependencies. The `[audio]` extra adds only numpy, and it is needed only when you read audio files directly (`--audio`). If you will use only a speech-interval JSON (`--speech`) or meta signals, `pip install whisper-scrub` is enough.
-- With uv: `uv add "whisper-scrub[audio]"`, or without installing, `uvx whisper-scrub --help`. (Install uv: `curl -LsSf https://astral.sh/uv/install.sh | sh`)
-- Install from source: `pip install "git+https://github.com/LeeGyeongPil/whisper-scrub"`
-- In a clean environment, the wheel was installed with `[audio]` and the examples below were confirmed to run (Python 3.12, numpy 2.5.4).
+If the project is already published on PyPI, the bare package name works too (if the install fails with "no matching distribution", it is not published yet; use the GitHub tag install above):
+
+```bash
+pip install "whisper-scrub[audio]"   # once published on PyPI
+```
+
+- Python 3.10 or later. The base install has 0 runtime dependencies. The `[audio]` extra adds only numpy, and it is needed only when you read audio files directly (`--audio`). If you will use only a speech-interval JSON (`--speech`) or meta signals, `pip install whisper-scrub` (once published on PyPI) or the same GitHub command without `[audio]` is enough.
+- With uv, once published on PyPI: `uv add "whisper-scrub[audio]"`, or without installing, `uvx whisper-scrub --help`. (Install uv: `curl -LsSf https://astral.sh/uv/install.sh | sh`)
+- Install from source: `pip install "git+https://github.com/LeeGyeongPil/whisper-scrub"` (installs with `git+` need git installed)
+- The tag-pinned GitHub install via `uvx --from git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.0 whisper-scrub --lang en --version` was confirmed to run (v0.2.0, the same install form as v0.2.1). The PyPI commands were not run here.
 
 ## Quick start
 
@@ -53,7 +62,7 @@ whisper-scrub: removed 7, suspect 1, kept 2 of 10 segments (dry run, nothing wri
 - input: examples/mixed_ko.srt (srt)
 - segments: 10 (removed 7, suspect 1, kept 2)
 - speech intervals: not provided
-- tool: whisper-scrub 0.2.0 (report_version 1)
+- tool: whisper-scrub 0.2.1 (report_version 1)
 
 | # | time (s) | action | confidence | rules | text |
 |---|---|---|---|---|---|
@@ -211,7 +220,7 @@ whisper-scrub: removed 0, suspect 1, kept 2 of 3 segments (dry run, nothing writ
 - input: examples/mixed_en.srt (srt)
 - segments: 3 (removed 0, suspect 1, kept 2)
 - speech intervals: 0
-- tool: whisper-scrub 0.2.0 (report_version 1)
+- tool: whisper-scrub 0.2.1 (report_version 1)
 - WARNING: speech intervals cover almost none of the transcript - check the file and its units (seconds) or the recording level; the audio rules were skipped, so nothing was deleted because of the audio
 
 | # | time (s) | action | confidence | rules | text |
@@ -359,19 +368,19 @@ result = scrub(segments, config=Config(phrases=book, repeat_min=4))
 | Symptom | Cause | Fix |
 |---|---|---|
 | A single `You` line is not deleted and appears only as `suspect` | An SRT has no meta signals and there is no audio evidence | Give `--speech` (speech-interval JSON) or `--audio` |
-| CLI: `whisper-scrub: error: numpy is required for --audio ...` (exit code 2), Python API: `MissingExtraError` | numpy is missing | `pip install "whisper-scrub[audio]"` |
-| CLI: `whisper-scrub: error: cannot read <파일> as a WAV file ...`, Python API: `AudioError` | The input is not a WAV or not 16-bit | `ffmpeg -i in.mp3 -ar 16000 -ac 1 -c:a pcm_s16le out.wav` |
+| CLI: `whisper-scrub: error: numpy is required for --audio ...` (exit code 2), Python API: `MissingExtraError` | numpy is missing | `pip install "whisper-scrub[audio] @ git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.1"` (or `pip install "whisper-scrub[audio]"` once published on PyPI) |
+| CLI: `whisper-scrub: error: cannot read <file> as a WAV file ...`, Python API: `AudioError` | The input is not a WAV or not 16-bit | `ffmpeg -i in.mp3 -ar 16000 -ac 1 -c:a pcm_s16le out.wav` |
 | `UnknownFormatError` | An unsupported JSON or subtitle format | Convert to a supported format (list above), or pass the segment list directly to `scrub()` |
 | Exit code 2 | Usage error (arguments, file path, `-o` equal to the input, etc.) | Follow the guidance in the one-line message |
 | A normal sentence comes out as `remove` | The speech-interval file is off in part, or the repeated sentence is real speech | Check the evidence in the `--dry-run` report and fix the interval file, or adjust `--repeat-min` and `--phantom-min-seconds` |
 | `warning: speech intervals cover almost none of the transcript ...` | The interval file is empty, the units are not seconds, or the recording is too quiet | Check that `start` and `end` in the interval JSON are in seconds, and the recording level. If the file really is silent, `--no-speech-guard` |
 
-(`<파일>` in the CLI message is the placeholder for "file".)
+(`<file>` in the CLI message is the placeholder for the file name.)
 
 ## Versions and compatibility
 
 - Follows Semantic Versioning (SemVer). During 0.x, the API may change in minor versions, and changes are recorded in [CHANGELOG.md](CHANGELOG.md).
-- Currently 0.2.0. Python 3.10 to 3.14 is declared as supported, and CI runs on 3.10 and 3.12 (ubuntu).
+- Currently 0.2.1. Python 3.10 to 3.14 is declared as supported, and CI runs on 3.10 and 3.12 (ubuntu).
 
 ## Development and contributing
 

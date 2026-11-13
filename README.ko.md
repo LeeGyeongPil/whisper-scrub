@@ -17,13 +17,22 @@ Whisper(openai-whisper, faster-whisper, whisper.cpp, OpenAI API)가 만든 전�
 ## 설치
 
 ```bash
-pip install "whisper-scrub[audio]"
+# 태그 고정 GitHub 릴리스에서 설치 (git 이 PATH 에 있어야 함)
+pip install "whisper-scrub[audio] @ git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.1"
+# uv 로 설치 없이 실행
+uvx --from git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.1 whisper-scrub --help
 ```
 
-- Python 3.10 이상. 기본 설치는 런타임 의존성이 0개입니다. `[audio]` extra 는 numpy 하나만 추가하며, 오디오 파일(`--audio`)을 직접 읽을 때만 필요합니다. 음성 구간 JSON(`--speech`)이나 메타 신호만 쓸 거라면 `pip install whisper-scrub` 으로 충분합니다.
-- uv 를 쓰면: `uv add "whisper-scrub[audio]"` 또는 설치 없이 `uvx whisper-scrub --help`. (uv 설치: `curl -LsSf https://astral.sh/uv/install.sh | sh`)
-- 소스에서 설치: `pip install "git+https://github.com/LeeGyeongPil/whisper-scrub"`
-- 깨끗한 환경에서 휠을 `[audio]` 와 함께 설치해 아래 예제가 돌아가는 것을 확인했습니다(Python 3.12, numpy 2.5.4).
+PyPI 에 이미 게시됐다면 패키지 이름만 쓰는 아래 명령도 동작합니다("no matching distribution" 오류가 나면 아직 게시 전이니 위 GitHub 태그 설치를 쓰세요).
+
+```bash
+pip install "whisper-scrub[audio]"   # PyPI 게시 뒤
+```
+
+- Python 3.10 이상. 기본 설치는 런타임 의존성이 0개입니다. `[audio]` extra 는 numpy 하나만 추가하며, 오디오 파일(`--audio`)을 직접 읽을 때만 필요합니다. 음성 구간 JSON(`--speech`)이나 메타 신호만 쓸 거라면 `pip install whisper-scrub`(PyPI 게시 뒤) 또는 `[audio]` 없는 같은 GitHub 명령으로 충분합니다.
+- uv 를 쓰면(PyPI 게시 뒤): `uv add "whisper-scrub[audio]"` 또는 설치 없이 `uvx whisper-scrub --help`. (uv 설치: `curl -LsSf https://astral.sh/uv/install.sh | sh`)
+- 소스에서 설치: `pip install "git+https://github.com/LeeGyeongPil/whisper-scrub"` (`git+` 설치에는 git 이 필요합니다)
+- `uvx --from git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.0 whisper-scrub --lang en --version` 로 태그 고정 GitHub 설치가 동작하는 것을 확인했습니다(v0.2.0, v0.2.1 과 같은 설치 형식). PyPI 명령은 여기서 실행해 보지 않았습니다.
 
 ## 빠르게 시작하기
 
@@ -53,7 +62,7 @@ whisper-scrub: 삭제 7개, 의심 1개, 유지 2개 (전체 10개 구간, 시�
 - 입력: examples/mixed_ko.srt (srt)
 - 구간: 10개 (삭제 7, 의심 1, 유지 2)
 - 말소리 구간: 주어지지 않음
-- 도구: whisper-scrub 0.2.0 (report_version 1)
+- 도구: whisper-scrub 0.2.1 (report_version 1)
 
 | # | 시간(초) | 동작 | 확신도 | 규칙 | 텍스트 |
 |---|---|---|---|---|---|
@@ -211,7 +220,7 @@ whisper-scrub: 삭제 0개, 의심 1개, 유지 2개 (전체 3개 구간, 시험
 - 입력: examples/mixed_en.srt (srt)
 - 구간: 3개 (삭제 0, 의심 1, 유지 2)
 - 말소리 구간: 0
-- 도구: whisper-scrub 0.2.0 (report_version 1)
+- 도구: whisper-scrub 0.2.1 (report_version 1)
 - 경고: 말소리 구간이 전사본을 거의 덮지 못합니다 - 파일과 단위(초) 또는 녹음 크기를 확인하세요. 오디오 규칙을 건너뛰었으므로 오디오 때문에 지워진 구간은 없습니다
 
 | # | 시간(초) | 동작 | 확신도 | 규칙 | 텍스트 |
@@ -359,8 +368,8 @@ result = scrub(segments, config=Config(phrases=book, repeat_min=4))
 | 증상 | 원인 | 해결 |
 |---|---|---|
 | `You` 한 줄이 지워지지 않고 `suspect` 로만 나옴 | SRT 에는 메타 신호가 없고 오디오 근거도 없음 | `--speech`(음성 구간 JSON) 또는 `--audio` 를 준다 |
-| CLI: `whisper-scrub: 오류: numpy 가 있어야 --audio(에너지 VAD)를 쓸 수 있습니다 ...`(영어 화면: `error: numpy is required for --audio ...`, 종료 코드 2), Python API: `MissingExtraError` | numpy 가 없음 | `pip install "whisper-scrub[audio]"` |
-| CLI: `whisper-scrub: 오류: <파일> 파일을 WAV 로 읽을 수 없습니다 ...`(영어 화면: `error: cannot read <파일> as a WAV file ...`), Python API: `AudioError` | 입력이 WAV 가 아니거나 16-bit 가 아님 | `ffmpeg -i in.mp3 -ar 16000 -ac 1 -c:a pcm_s16le out.wav` |
+| CLI: `whisper-scrub: 오류: numpy 가 있어야 --audio(에너지 VAD)를 쓸 수 있습니다 ...`(영어 화면: `error: numpy is required for --audio ...`, 종료 코드 2), Python API: `MissingExtraError` | numpy 가 없음 | `pip install "whisper-scrub[audio] @ git+https://github.com/LeeGyeongPil/whisper-scrub@v0.2.1"`(PyPI 게시 뒤에는 `pip install "whisper-scrub[audio]"`) |
+| CLI: `whisper-scrub: 오류: <파일> 파일을 WAV 로 읽을 수 없습니다 ...`(영어 화면: `error: cannot read <file> as a WAV file ...`), Python API: `AudioError` | 입력이 WAV 가 아니거나 16-bit 가 아님 | `ffmpeg -i in.mp3 -ar 16000 -ac 1 -c:a pcm_s16le out.wav` |
 | `UnknownFormatError` | 지원하지 않는 JSON·자막 형식 | 지원 형식(위 목록)으로 바꾸거나 세그먼트 목록을 `scrub()` 에 직접 넘긴다 |
 | 종료 코드 2 | 사용 오류(인자·파일 경로·`-o` 가 입력과 같음 등) | 한 줄 메시지의 안내를 따른다 |
 | 정상 문장이 `remove` 로 나옴 | 음성 구간 파일이 일부 어긋났거나 반복 문장이 실제 말 | `--dry-run` 보고서의 근거를 확인하고 구간 파일을 고치거나 `--repeat-min`·`--phantom-min-seconds` 를 조정 |
@@ -369,7 +378,7 @@ result = scrub(segments, config=Config(phrases=book, repeat_min=4))
 ## 버전·호환성
 
 - 유의적 버전(SemVer)을 따릅니다. 0.x 동안은 마이너 버전에서 API가 바뀔 수 있고, 바뀌면 [CHANGELOG.md](CHANGELOG.md)에 적습니다.
-- 현재 0.2.0. Python 3.10~3.14 지원 선언, CI 는 3.10·3.12(ubuntu).
+- 현재 0.2.1. Python 3.10~3.14 지원 선언, CI 는 3.10·3.12(ubuntu).
 
 ## 개발·기여
 
