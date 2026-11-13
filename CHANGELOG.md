@@ -4,6 +4,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-11-13
+
+### Fixed
+- Documentation: the README install section now leads with the tag-pinned GitHub install
+  (`pip` and `uvx --from git+...@v0.2.1`) so it works whether or not the package is on PyPI yet; the bare PyPI
+  commands are described as working once published. Also notes that `git+` installs need git.
+
+### Known issues
+- The numpy hint printed by the CLI and `MissingExtraError` (in `i18n.py`) suggests the PyPI form
+  `pip install "whisper-scrub[audio]"`, which fails until the package is published; use the GitHub tag install.
+
 ## [0.2.0] - 2026-11-13
 
 ### Added
